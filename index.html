@@ -80,11 +80,11 @@
       <div class="hud-telemetry">
         <div class="telemetry-item">
           <span class="telemetry-label">NÚCLEO IA</span>
-          <span class="telemetry-val" id="model-indicator">GEMINI 2.0</span>
+          <span class="telemetry-val" id="model-indicator">GEMINI 2.5</span>
         </div>
         <div class="telemetry-item">
-          <span class="telemetry-label">SINCRONIA</span>
-          <span class="telemetry-val text-cyan">99.8%</span>
+          <span class="telemetry-label">PONTE PC</span>
+          <span class="telemetry-val text-cyan" id="bridge-indicator">ONLINE</span>
         </div>
         <div class="telemetry-item">
           <span class="telemetry-label">ESTADO</span>
@@ -118,28 +118,22 @@
         
         <div class="widget-block">
           <div class="widget-row">
-            <span>FLUXO DE DADOS</span>
-            <span class="text-cyan" id="data-flux">48.2 GB/s</span>
+            <span>MEMÓRIA RAM (PC)</span>
+            <span class="text-cyan" id="data-flux">Carregando...</span>
           </div>
           <div class="hud-progress-bar">
-            <div class="progress-fill" style="width: 78%;"></div>
+            <div class="progress-fill" id="ram-progress-fill" style="width: 50%;"></div>
           </div>
         </div>
 
         <div class="widget-block">
           <div class="widget-row">
-            <span>LATÊNCIA NEURAL</span>
-            <span class="text-cyan">18ms</span>
+            <span>UPTIME MÁQUINA</span>
+            <span class="text-cyan" id="pc-uptime">--</span>
           </div>
-          <div class="hud-progress-bar">
-            <div class="progress-fill" style="width: 22%;"></div>
-          </div>
-        </div>
-
-        <div class="widget-block">
           <div class="widget-row">
-            <span>MODO DE ESCUTA</span>
-            <span class="text-green" id="listen-mode-status">ATIVO</span>
+            <span>AUTOMAÇÃO LOCAL</span>
+            <span class="text-green" id="bridge-status-badge">CONECTADA</span>
           </div>
         </div>
 
@@ -194,9 +188,11 @@
 
         <!-- Sugestões de Comandos Rápidos -->
         <div class="quick-commands">
-          <button class="chip-cmd" data-cmd="Mary, qual é o seu status operacional?">Status Operacional</button>
-          <button class="chip-cmd" data-cmd="Quem é você e como pode me ajudar?">Apresentação</button>
-          <button class="chip-cmd" data-cmd="Mary, conte uma curiosidade sobre o universo do Homem de Ferro.">Curiosidade Stark</button>
+          <button class="chip-cmd" data-cmd="Mary, abra o YouTube">Abrir YouTube</button>
+          <button class="chip-cmd" data-cmd="Mary, abra as configurações do computador">Configurações PC</button>
+          <button class="chip-cmd" data-cmd="Mary, abra o projeto MaryAI no VS Code">Projeto VS Code</button>
+          <button class="chip-cmd" data-cmd="Mary, abra a calculadora">Calculadora</button>
+          <button class="chip-cmd" data-cmd="Mary, qual é o seu status operacional?">Status Mary</button>
         </div>
       </aside>
     </main>

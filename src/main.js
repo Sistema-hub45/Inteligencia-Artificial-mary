@@ -6,6 +6,7 @@ import { speechRecognizer } from './voice/speechToText.js';
 import { ttsManager } from './voice/textToSpeech.js';
 import { googleAuth } from './auth/googleAuth.js';
 import { geminiService } from './ai/geminiService.js';
+import { localBridge } from './bridge/localBridge.js';
 
 class MaryApplication {
   constructor() {
@@ -50,6 +51,13 @@ class MaryApplication {
     this.btnSaveSettings = document.getElementById('btn-save-settings');
     this.modelIndicator = document.getElementById('model-indicator');
 
+    // Elementos da Ponte Local do PC
+    this.bridgeIndicator = document.getElementById('bridge-indicator');
+    this.bridgeStatusBadge = document.getElementById('bridge-status-badge');
+    this.dataFlux = document.getElementById('data-flux');
+    this.ramProgressFill = document.getElementById('ram-progress-fill');
+    this.pcUptime = document.getElementById('pc-uptime');
+
     this.init();
   }
 
@@ -74,6 +82,9 @@ class MaryApplication {
 
     // 6. Inicia o loop de animação das barras de áudio
     this.startAudioBarsLoop();
+
+    // 7. Inicializa a Ponte Local do PC (Telemetria & Automação)
+    this.setupLocalBridge();
   }
 
   setupAudioBars() {
@@ -218,10 +229,78 @@ class MaryApplication {
     this.setMaryStatus('THINKING', 'PROCESSANDO DIRETRIZ...');
 
     const userName = this.currentUser ? this.currentUser.name : 'Operador';
-    const reply = await geminiService.sendMessage(text, userName);
+    const result = await geminiService.sendMessage(text, userName);
 
-    this.addChatMessage('mary', reply);
-    this.speakMary(reply);
+    const replyText = typeof result === 'string' ? result : result.replyText;
+    const speechText = typeof result === 'string' ? result : result.speechText;
+    const action = typeof result === 'object' ? result.action : null;
+
+    this.addChatMessage('mary', replyText);
+    this.speakMary(speechText);
+
+    if (action) {
+      this.executeAutomation(action);
+    }
+  }
+
+  async executeAutomation(action) {
+    const statusEntry = document.createElement('div');
+    statusEntry.className = 'chat-entry system-entry';
+    statusEntry.innerHTML = `
+      <span class="entry-author" style="color: var(--cyan-glow);">[SISTEMA DE AUTOMAÇÃO]</span>
+      <div class="entry-text">⚡ Executando no PC: <strong>${action.description || action.action}</strong>...</div>
+    `;
+    this.chatLog.appendChild(statusEntry);
+    this.chatLog.scrollTop = this.chatLog.scrollHeight;
+
+    const res = await localBridge.execute(action.action, action.target, action.params);
+
+    if (res.success) {
+      statusEntry.innerHTML = `
+        <span class="entry-author" style="color: var(--green-status);">[AUTOMAÇÃO CONCLUÍDA]</span>
+        <div class="entry-text">✔ ${action.description || 'Tarefa executada no computador com sucesso.'}</div>
+      `;
+    } else {
+      statusEntry.innerHTML = `
+        <span class="entry-author" style="color: var(--red-alert);">[ERRO NA AUTOMAÇÃO]</span>
+        <div class="entry-text">✖ Falha ao executar: ${res.error || 'Erro desconhecido.'}</div>
+      `;
+    }
+    this.chatLog.scrollTop = this.chatLog.scrollHeight;
+  }
+
+  async setupLocalBridge() {
+    const status = await localBridge.checkStatus();
+    if (status) {
+      if (this.bridgeIndicator) this.bridgeIndicator.textContent = 'ONLINE';
+      if (this.bridgeStatusBadge) {
+        this.bridgeStatusBadge.textContent = 'CONECTADA';
+        this.bridgeStatusBadge.className = 'text-green';
+      }
+      this.updateTelemetry();
+      setInterval(() => this.updateTelemetry(), 4000);
+    } else {
+      if (this.bridgeIndicator) this.bridgeIndicator.textContent = 'STANDALONE';
+      if (this.bridgeStatusBadge) {
+        this.bridgeStatusBadge.textContent = 'OFFLINE';
+        this.bridgeStatusBadge.className = 'text-gold';
+      }
+    }
+  }
+
+  async updateTelemetry() {
+    const data = await localBridge.getTelemetry();
+    if (data && data.memory) {
+      if (this.dataFlux) {
+        this.dataFlux.textContent = `${data.memory.usedGB} / ${data.memory.totalGB} GB`;
+      }
+      if (this.ramProgressFill) {
+        this.ramProgressFill.style.width = `${data.memory.percentage}%`;
+      }
+      if (this.pcUptime) {
+        this.pcUptime.textContent = data.uptime;
+      }
+    }
   }
 
   speakMary(text) {
