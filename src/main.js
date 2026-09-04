@@ -121,6 +121,16 @@ class MaryApplication {
       googleAuth.loginAsGuest();
     });
 
+    // Botão do crachá biométrico
+    const secBadgeBtn = document.getElementById('security-badge-btn');
+    if (secBadgeBtn) {
+      secBadgeBtn.addEventListener('click', () => {
+        audioWave.init();
+        audioWave.resume();
+        googleAuth.loginAsGuest();
+      });
+    }
+
     // Logout
     this.btnLogout.addEventListener('click', () => {
       googleAuth.logout();

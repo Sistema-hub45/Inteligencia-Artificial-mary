@@ -34,25 +34,26 @@
       </div>
 
       <div class="auth-body">
-        <div class="security-badge">
+        <!-- Botão de Autenticação Biométrica / Acesso Rápido -->
+        <button type="button" id="security-badge-btn" class="security-badge" style="cursor: pointer; width: 100%; border: 1px solid var(--cyan-glow); background: rgba(0, 240, 255, 0.08); transition: all 0.2s ease;" title="Clique para autenticação imediata">
           <span class="security-icon">🔒</span>
-          <span class="security-text">Autenticação Biométrica / Google Requerida</span>
-        </div>
+          <span class="security-text">Autenticação Biométrica // Clique para Acessar</span>
+        </button>
 
         <p class="auth-instruction">
-          Para inicializar os subsistemas de inteligência artificial da Mary, autentique-se com sua conta Google.
+          Para inicializar os subsistemas da Mary e assumir o controle do sistema:
         </p>
 
-        <!-- Botão Oficial do Google -->
-        <div id="google-signin-btn-container" class="google-btn-wrapper"></div>
-
-        <!-- Botão de Acesso Rápido / Demonstração -->
+        <!-- Botão Principal de Acesso Direto -->
         <div class="auth-actions">
-          <button id="btn-demo-login" class="hud-button secondary-glow" title="Acessar sem configurar Client ID do Google agora">
+          <button id="btn-demo-login" class="hud-button primary-glow" style="width: 100%; justify-content: center; padding: 14px 20px; font-size: 13px; letter-spacing: 1px;">
             <span class="btn-icon">⚡</span>
-            <span>Acesso Rápido de Teste (Convidado)</span>
+            <span>INICIAR INTERFACE DA MARY (ACESSO DIRETO)</span>
           </button>
         </div>
+
+        <!-- Botão Oficial do Google (Se houver Client ID) -->
+        <div id="google-signin-btn-container" class="google-btn-wrapper"></div>
 
         <div class="auth-footer-info">
           <span class="status-indicator-dot online"></span>
