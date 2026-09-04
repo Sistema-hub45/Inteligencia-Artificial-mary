@@ -82,7 +82,96 @@ Ações suportadas:
     };
   }
 
-  async sendMessage(userText, userName = 'Senhor') {
+  async fetchAvailableModels() {
+    if (!this.apiKey) return [];
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`);
+      if (!res.ok) {
+        // Tenta na v1 caso a v1beta tenha restrição
+        const resV1 = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${this.apiKey}`);
+        if (!resV1.ok) return [];
+        const dataV1 = await resV1.json();
+        return (dataV1.models || [])
+          .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+          .map(m => m.name.replace(/^models\//, ''));
+      }
+      const data = await res.json();
+      return (data.models || [])
+        .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+        .map(m => m.name.replace(/^models\//, ''));
+    } catch (e) {
+      console.warn('[MARY AI] Falha ao consultar modelos disponíveis no Google:', e);
+      return [];
+    }
+  }
+
+  async resolveBestModel() {
+    const available = await this.fetchAvailableModels();
+    if (!available || available.length === 0) {
+      return this.modelName;
+    }
+
+    if (available.includes(this.modelName)) {
+      return this.modelName;
+    }
+
+    // Ordem de preferência para os modelos mais avançados disponíveis
+    const preferredOrder = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-2.5-pro',
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro'
+    ];
+
+    for (const pref of preferredOrder) {
+      const match = available.find(m => m === pref || m.includes(pref));
+      if (match) {
+        console.log(`[MARY AI] Melhor modelo resolvido para sua chave: ${match}`);
+        this.setModel(match);
+        return match;
+      }
+    }
+
+    const first = available[0];
+    this.setModel(first);
+    return first;
+  }
+
+  detectLocalIntent(text, userName) {
+    const lower = text.toLowerCase();
+    let reply = '';
+    let speech = '';
+    let action = null;
+
+    if (lower.includes('youtube')) {
+      reply = `Executando diretriz localmente, ${userName}: Acessando o YouTube no seu navegador agora mesmo.\n\n\`\`\`action\n{"action": "OPEN_URL", "target": "https://youtube.com", "description": "Abrindo o YouTube"}\n\`\`\``;
+      speech = `Executando diretriz localmente, ${userName}: Acessando o YouTube no seu navegador agora mesmo.`;
+      action = { action: 'OPEN_URL', target: 'https://youtube.com', description: 'Abrindo o YouTube' };
+    } else if (lower.includes('configuraç') || lower.includes('settings')) {
+      reply = `Abrindo o painel de configurações do seu computador, ${userName}.\n\n\`\`\`action\n{"action": "OPEN_SETTINGS", "target": "ms-settings:", "description": "Abrindo Configurações do Windows"}\n\`\`\``;
+      speech = `Abrindo o painel de configurações do seu computador, ${userName}.`;
+      action = { action: 'OPEN_SETTINGS', target: 'ms-settings:', description: 'Abrindo Configurações do Windows' };
+    } else if (lower.includes('projeto') || lower.includes('vs code') || lower.includes('vscode')) {
+      reply = `Abrindo o projeto MaryAI no Visual Studio Code, ${userName}.\n\n\`\`\`action\n{"action": "OPEN_PROJECT", "target": "c:\\\\Testando ias\\\\MaryAI", "description": "Abrindo projeto MaryAI no VS Code"}\n\`\`\``;
+      speech = `Abrindo o projeto MaryAI no Visual Studio Code, ${userName}.`;
+      action = { action: 'OPEN_PROJECT', target: 'c:\\Testando ias\\MaryAI', description: 'Abrindo projeto MaryAI no VS Code' };
+    } else if (lower.includes('calculadora') || lower.includes('calc')) {
+      reply = `Iniciando a calculadora do Windows, ${userName}.\n\n\`\`\`action\n{"action": "OPEN_APP", "target": "calc", "description": "Abrindo a Calculadora"}\n\`\`\``;
+      speech = `Iniciando a calculadora do Windows, ${userName}.`;
+      action = { action: 'OPEN_APP', target: 'calc', description: 'Abrindo a Calculadora' };
+    }
+
+    return {
+      replyText: reply,
+      speechText: speech,
+      action
+    };
+  }
+
+  async sendMessage(userText, userName = 'Senhor', isRetry = false) {
     // Se não tiver chave de API inserida, responde em modo de simulação da Mary
     if (!this.apiKey) {
       return this.generateSimulatedResponse(userText, userName);
@@ -124,14 +213,14 @@ Ações suportadas:
         const errorData = await response.json().catch(() => ({}));
         const errMsg = errorData.error?.message || `Erro HTTP ${response.status}`;
 
-        // Fallback automático caso o Google descontinue ou renomeie modelos
-        if (errMsg.includes('no longer available') || errMsg.includes('not found')) {
+        // Se o modelo não foi encontrado, descobre automaticamente o melhor modelo ativo na conta
+        if ((errMsg.includes('not found') || errMsg.includes('no longer available')) && !isRetry) {
           this.conversationHistory.pop();
-          if (this.modelName !== 'gemini-1.5-flash') {
-            console.warn(`[MARY AI] Redirecionando para gemini-1.5-flash devido a: ${errMsg}`);
-            this.modelName = 'gemini-1.5-flash';
-            localStorage.setItem('mary_gemini_model', 'gemini-1.5-flash');
-            return this.sendMessage(userText, userName);
+          console.warn(`[MARY AI] Modelo ${this.modelName} indisponível. Buscando modelos ativos na conta Google...`);
+          const newModel = await this.resolveBestModel();
+          if (newModel && newModel !== this.modelName) {
+            console.log(`[MARY AI] Tentando novamente com o modelo ativo: ${newModel}`);
+            return this.sendMessage(userText, userName, true);
           }
         }
 
@@ -153,7 +242,15 @@ Ações suportadas:
       if (this.conversationHistory.length > 0 && this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
         this.conversationHistory.pop();
       }
-      const errReply = `Aviso dos sistemas: Ocorreu uma anomalia na conexão com o Gemini (${error.message}). Recomendo verificar sua chave de API nas configurações.`;
+
+      // Se for um comando de automação local (YouTube, Configurações, etc.), a Mary executa no PC mesmo se a API estiver em erro!
+      const localIntent = this.detectLocalIntent(userText, userName);
+      if (localIntent.action) {
+        console.log('[MARY AI] Intenção local executada como salvaguarda:', localIntent.action);
+        return localIntent;
+      }
+
+      const errReply = `Aviso dos sistemas: Ocorreu uma anomalia na conexão com o Gemini (${error.message}). Recomendo clicar em 'Detectar Modelos' nas configurações.`;
       return {
         replyText: errReply,
         speechText: errReply,

@@ -47,6 +47,8 @@ class MaryApplication {
     this.voiceRate = document.getElementById('voice-rate');
     this.voiceRateVal = document.getElementById('voice-rate-val');
     this.btnTestVoice = document.getElementById('btn-test-voice');
+    this.btnDetectModels = document.getElementById('btn-detect-models');
+    this.detectModelsStatus = document.getElementById('detect-models-status');
     this.googleClientIdInput = document.getElementById('google-client-id-input');
     this.btnSaveSettings = document.getElementById('btn-save-settings');
     this.modelIndicator = document.getElementById('model-indicator');
@@ -390,6 +392,63 @@ class MaryApplication {
         this.geminiApiKeyInput.type = 'password';
       }
     });
+
+    // Detectar modelos disponíveis diretamente na conta do Google
+    if (this.btnDetectModels) {
+      this.btnDetectModels.addEventListener('click', async () => {
+        const key = this.geminiApiKeyInput.value.trim();
+        if (!key) {
+          if (this.detectModelsStatus) {
+            this.detectModelsStatus.textContent = 'Cole a chave de API primeiro!';
+            this.detectModelsStatus.style.color = 'var(--gold-accent)';
+          }
+          return;
+        }
+
+        geminiService.setApiKey(key);
+        if (this.detectModelsStatus) {
+          this.detectModelsStatus.textContent = 'Consultando Google...';
+          this.detectModelsStatus.style.color = 'var(--cyan-glow)';
+        }
+
+        const models = await geminiService.fetchAvailableModels();
+        if (models && models.length > 0) {
+          this.geminiModelSelect.innerHTML = '';
+          models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            this.geminiModelSelect.appendChild(opt);
+          });
+
+          const best = await geminiService.resolveBestModel();
+          this.geminiModelSelect.value = best;
+          geminiService.setModel(best);
+          this.modelIndicator.textContent = best.toUpperCase();
+
+          if (this.detectModelsStatus) {
+            this.detectModelsStatus.textContent = `✔ ${models.length} modelos detectados! Ativo: ${best}`;
+            this.detectModelsStatus.style.color = 'var(--green-status)';
+          }
+          this.addChatMessage('system', `Modelos Google sincronizados: ${best} ativo.`);
+        } else {
+          if (this.detectModelsStatus) {
+            this.detectModelsStatus.textContent = 'Erro ao listar modelos. Verifique a chave.';
+            this.detectModelsStatus.style.color = 'var(--red-alert)';
+          }
+        }
+      });
+    }
+
+    // Tenta resolver automaticamente o melhor modelo se já houver chave
+    if (geminiService.apiKey) {
+      geminiService.resolveBestModel().then(best => {
+        if (best && this.geminiModelSelect) {
+          this.geminiModelSelect.value = best;
+          this.modelIndicator.textContent = best.toUpperCase();
+        }
+      });
+    }
 
     // Abrir/fechar modal
     this.btnOpenSettings.addEventListener('click', () => {
