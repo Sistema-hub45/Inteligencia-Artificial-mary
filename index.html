@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>M.A.R.Y. // Sistema de Inteligência Artificial</title>
+  <meta name="description" content="Assistente de inteligência artificial futurista inspirada no universo Iron Man, com interface de voz e visualização de androide." />
+  
+  <!-- Fontes Sci-Fi do Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Google Identity Services (Google Sign-In) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body class="hud-body">
+  <!-- Scanlines & Vinheta Sci-Fi de Fundo -->
+  <div class="scanlines-overlay"></div>
+  <div class="grid-background"></div>
+  <div class="glow-radial-bg"></div>
+
+  <!-- ================= TELA DE LOGIN GOOGLE / BLOQUEIO INICIAL ================= -->
+  <div id="auth-overlay" class="auth-overlay active">
+    <div class="auth-box glass-panel">
+      <div class="auth-header">
+        <div class="arc-mini-ring">
+          <div class="arc-dot"></div>
+        </div>
+        <h1 class="hud-title">SISTEMA M.A.R.Y.</h1>
+        <p class="hud-subtitle">INTERFACE NEURAL // PROTOCOLO DE ACESSO</p>
+      </div>
+
+      <div class="auth-body">
+        <div class="security-badge">
+          <span class="security-icon">🔒</span>
+          <span class="security-text">Autenticação Biométrica / Google Requerida</span>
+        </div>
+
+        <p class="auth-instruction">
+          Para inicializar os subsistemas de inteligência artificial da Mary, autentique-se com sua conta Google.
+        </p>
+
+        <!-- Botão Oficial do Google -->
+        <div id="google-signin-btn-container" class="google-btn-wrapper"></div>
+
+        <!-- Botão de Acesso Rápido / Demonstração -->
+        <div class="auth-actions">
+          <button id="btn-demo-login" class="hud-button secondary-glow" title="Acessar sem configurar Client ID do Google agora">
+            <span class="btn-icon">⚡</span>
+            <span>Acesso Rápido de Teste (Convidado)</span>
+          </button>
+        </div>
+
+        <div class="auth-footer-info">
+          <span class="status-indicator-dot online"></span>
+          <span>Sistemas Operacionais v3.5 // Gemini Engine</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= INTERFACE PRINCIPAL HUD DA MARY ================= -->
+  <div id="main-hud" class="main-hud hidden">
+    <!-- BARRA SUPERIOR (HEADER) -->
+    <header class="hud-topbar glass-panel">
+      <div class="brand-zone">
+        <div class="arc-reactor-logo" id="arc-reactor-toggle" title="Status do Núcleo">
+          <div class="arc-inner-core"></div>
+        </div>
+        <div class="brand-info">
+          <span class="brand-title">M.A.R.Y. <span class="version-tag">M.K. VII</span></span>
+          <span class="brand-status" id="hud-status-badge">SISTEMAS OPERACIONAIS</span>
+        </div>
+      </div>
+
+      <!-- Métricas de Telemetria do Topo -->
+      <div class="hud-telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-label">NÚCLEO IA</span>
+          <span class="telemetry-val" id="model-indicator">GEMINI 2.0</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">SINCRONIA</span>
+          <span class="telemetry-val text-cyan">99.8%</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">ESTADO</span>
+          <span class="telemetry-val text-green" id="mary-state-indicator">PRONTA</span>
+        </div>
+      </div>
+
+      <!-- Perfil do Usuário e Configurações -->
+      <div class="user-zone">
+        <button id="btn-open-settings" class="icon-hud-button" title="Configurações (API Key, Voz, Google)">
+          ⚙️
+        </button>
+        <div class="user-profile-chip" id="user-profile-chip">
+          <img id="user-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f0ff'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E" alt="Avatar" />
+          <span id="user-name">Usuário</span>
+        </div>
+        <button id="btn-logout" class="icon-hud-button exit-btn" title="Desconectar">
+          ✕
+        </button>
+      </div>
+    </header>
+
+    <!-- ÁREA CENTRAL DO HUD -->
+    <main class="hud-viewport">
+      <!-- PAINEL ESQUERDO: DIAGNÓSTICOS & TELEMETRIA -->
+      <aside class="hud-panel left-panel glass-panel">
+        <div class="panel-header">
+          <span class="panel-title">TELEMETRIA & ENERGIA</span>
+          <span class="panel-tag">SEC-01</span>
+        </div>
+        
+        <div class="widget-block">
+          <div class="widget-row">
+            <span>FLUXO DE DADOS</span>
+            <span class="text-cyan" id="data-flux">48.2 GB/s</span>
+          </div>
+          <div class="hud-progress-bar">
+            <div class="progress-fill" style="width: 78%;"></div>
+          </div>
+        </div>
+
+        <div class="widget-block">
+          <div class="widget-row">
+            <span>LATÊNCIA NEURAL</span>
+            <span class="text-cyan">18ms</span>
+          </div>
+          <div class="hud-progress-bar">
+            <div class="progress-fill" style="width: 22%;"></div>
+          </div>
+        </div>
+
+        <div class="widget-block">
+          <div class="widget-row">
+            <span>MODO DE ESCUTA</span>
+            <span class="text-green" id="listen-mode-status">ATIVO</span>
+          </div>
+        </div>
+
+        <!-- Visualizador de Frequência de Áudio -->
+        <div class="audio-bars-container" id="audio-bars-container">
+          <!-- Gerado dinamicamente via JS -->
+        </div>
+
+        <div class="panel-footer-notes">
+          <span class="tech-code">ID: MR-9482 // STARK-SYS</span>
+        </div>
+      </aside>
+
+      <!-- VISUALIZADOR CENTRAL: O ROSTO DO ROBÔ FEMININO DA MARY (FOTO REALISTA + HUD) -->
+      <section class="hud-center-stage">
+        <div class="robot-portrait-wrapper" id="robot-portrait-wrapper">
+          <div class="hologram-scan-beam"></div>
+          <img src="/mary_robot.jpg" alt="Rosto da Mary AI" class="mary-realistic-photo" id="mary-photo" />
+          
+          <!-- Canvas de Overlay para Ondas de Áudio e Efeitos Holográficos -->
+          <canvas id="robot-canvas"></canvas>
+
+          <div class="radar-crosshair"></div>
+          <div class="focus-ring outer-ring"></div>
+          <div class="focus-ring inner-ring"></div>
+          <div class="corner-bracket top-left"></div>
+          <div class="corner-bracket top-right"></div>
+          <div class="corner-bracket bottom-left"></div>
+          <div class="corner-bracket bottom-right"></div>
+        </div>
+
+        <!-- Indicador de Status Flutuante da Mary -->
+        <div class="mary-voice-status" id="mary-voice-status">
+          <span class="status-pulse-dot"></span>
+          <span id="mary-status-text">MARY EM MODO DE ESPERA</span>
+        </div>
+      </section>
+
+      <!-- PAINEL DIREITO: TERMINAL DE CONVERSA & TRANSCRIÇÃO -->
+      <aside class="hud-panel right-panel glass-panel">
+        <div class="panel-header">
+          <span class="panel-title">LOG DE COMANDOS</span>
+          <span class="panel-tag">TRANS-RX</span>
+        </div>
+
+        <div class="chat-log" id="chat-log">
+          <div class="chat-entry system-entry">
+            <span class="entry-time">[00:00:01]</span>
+            <span class="entry-text">Interface Mary inicializada. Aguardando suas instruções de voz ou texto.</span>
+          </div>
+        </div>
+
+        <!-- Sugestões de Comandos Rápidos -->
+        <div class="quick-commands">
+          <button class="chip-cmd" data-cmd="Mary, qual é o seu status operacional?">Status Operacional</button>
+          <button class="chip-cmd" data-cmd="Quem é você e como pode me ajudar?">Apresentação</button>
+          <button class="chip-cmd" data-cmd="Mary, conte uma curiosidade sobre o universo do Homem de Ferro.">Curiosidade Stark</button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- BARRA INFERIOR DE CONTROLE E ENTRADA (VOZ & TEXTO) -->
+    <footer class="hud-bottombar glass-panel">
+      <!-- Botão de Ativação do Microfone -->
+      <div class="mic-container">
+        <button id="btn-mic" class="mic-button" title="Pressione para falar com a Mary">
+          <div class="mic-rings"></div>
+          <svg class="mic-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
+        </button>
+        <span class="mic-label" id="mic-status-label">CLIQUE PARA FALAR</span>
+      </div>
+
+      <!-- Entrada de Texto Futurista -->
+      <form id="chat-form" class="hud-input-form">
+        <div class="input-bracket left">[</div>
+        <input 
+          type="text" 
+          id="input-prompt" 
+          class="hud-input" 
+          placeholder="Digite um comando para a Mary ou fale no microfone..." 
+          autocomplete="off"
+        />
+        <div class="input-bracket right">]</div>
+        <button type="submit" id="btn-send" class="hud-send-button">
+          <span>TRANSMITIR</span>
+          <span class="send-arrow">➔</span>
+        </button>
+      </form>
+
+      <!-- Controles de Áudio da Mary -->
+      <div class="voice-toggle-zone">
+        <button id="btn-toggle-speaker" class="icon-toggle-button active" title="Alternar Resposta por Voz da Mary">
+          <span id="speaker-icon">🔊</span>
+          <span class="toggle-text">VOZ ATIVA</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ================= MODAL DE CONFIGURAÇÕES ================= -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-panel">
+      <div class="modal-header">
+        <h2>CONFIGURAÇÕES DE SUBSISTEMAS</h2>
+        <button id="btn-close-settings" class="close-modal-btn">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Nome do Operador -->
+        <div class="config-field">
+          <label for="operator-name-input">NOME DO OPERADOR (Como a Mary irá te chamar):</label>
+          <input type="text" id="operator-name-input" placeholder="Rafa" value="Rafa" class="hud-modal-input" />
+        </div>
+
+        <!-- Chave de API do Gemini -->
+        <div class="config-field">
+          <label for="gemini-api-key-input">
+            CHAVE DE API DO GOOGLE GEMINI:
+            <span class="hint-text">(Armazenada apenas localmente no seu navegador)</span>
+          </label>
+          <div class="input-row">
+            <input type="password" id="gemini-api-key-input" placeholder="AIzaSy..." class="hud-modal-input" />
+            <button id="btn-toggle-key-visibility" class="mini-btn">👁</button>
+          </div>
+          <small class="field-help">Obtenha sua chave gratuita em <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>. (Sem chave, a Mary funciona em modo de simulação com respostas pré-programadas).</small>
+        </div>
+
+        <!-- Escolha do Modelo Gemini -->
+        <div class="config-field">
+          <label for="gemini-model-select">MODELO COGNITIVO:</label>
+          <select id="gemini-model-select" class="hud-modal-select">
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Mais Rápido / Recomendado)</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+          </select>
+        </div>
+
+        <!-- Configuração de Voz da Mary (TTS) -->
+        <div class="config-field">
+          <label for="voice-select">VOZ SINTÉTICA DA MARY (TTS):</label>
+          <select id="voice-select" class="hud-modal-select">
+            <option value="">Carregando vozes do sistema...</option>
+          </select>
+          <div class="voice-controls-row">
+            <label>Velocidade: <span id="voice-rate-val">1.05x</span></label>
+            <input type="range" id="voice-rate" min="0.8" max="1.4" step="0.05" value="1.05" class="hud-slider" />
+          </div>
+          <button id="btn-test-voice" class="hud-button mini-glow">Testar Voz da Mary</button>
+        </div>
+
+        <!-- Google OAuth Client ID -->
+        <div class="config-field">
+          <label for="google-client-id-input">GOOGLE CLIENT ID (Opcional para login personalizado):</label>
+          <input type="text" id="google-client-id-input" placeholder="seu-client-id.apps.googleusercontent.com" class="hud-modal-input" />
+          <small class="field-help">Configurável no <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>.</small>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-save-settings" class="hud-button primary-glow">SALVAR ALTERAÇÕES</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script principal da aplicação -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
