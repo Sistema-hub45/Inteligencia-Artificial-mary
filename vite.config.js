@@ -82,14 +82,14 @@ function maryBridgePlugin() {
                   if (!settingsUri.startsWith('ms-settings:')) {
                     settingsUri = `ms-settings:${settingsUri}`;
                   }
-                  shellCommand = `start ${settingsUri}`;
+                  shellCommand = `start "" "${settingsUri}"`;
                   break;
                 }
 
                 case 'OPEN_PROJECT': {
                   // Abre projeto no VS Code ou Explorer
                   const projectPath = target || process.cwd();
-                  shellCommand = `code "${projectPath}" || start explorer.exe "${projectPath}"`;
+                  shellCommand = `code "${projectPath}" || explorer.exe "${projectPath}"`;
                   break;
                 }
 
@@ -105,7 +105,7 @@ function maryBridgePlugin() {
                     explorer: 'start explorer',
                     spotify: 'start spotify:'
                   };
-                  shellCommand = appsMap[target.toLowerCase()] || `start ${target}`;
+                  shellCommand = appsMap[target.toLowerCase()] || `start "" "${target}"`;
                   break;
                 }
 
@@ -124,7 +124,7 @@ function maryBridgePlugin() {
 
               console.log(`[MARY BRIDGE] Executando comando: ${shellCommand}`);
 
-              exec(shellCommand, { shell: 'powershell.exe' }, (err, stdout, stderr) => {
+              exec(shellCommand, { shell: 'cmd.exe' }, (err, stdout, stderr) => {
                 if (err) {
                   console.error(`[MARY BRIDGE] Erro na execução:`, err);
                   res.writeHead(500, { 'Content-Type': 'application/json' });
