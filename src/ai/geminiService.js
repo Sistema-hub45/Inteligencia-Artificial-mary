@@ -4,7 +4,13 @@
 export class GeminiService {
   constructor() {
     this.apiKey = localStorage.getItem('mary_gemini_api_key') || '';
-    this.modelName = localStorage.getItem('mary_gemini_model') || 'gemini-2.0-flash';
+    let savedModel = localStorage.getItem('mary_gemini_model');
+    // Migração automática de modelos descontinuados pelo Google
+    if (!savedModel || savedModel === 'gemini-2.0-flash') {
+      savedModel = 'gemini-2.5-flash';
+      localStorage.setItem('mary_gemini_model', savedModel);
+    }
+    this.modelName = savedModel;
     this.conversationHistory = [];
 
     this.systemInstruction = `
@@ -68,7 +74,20 @@ Suas diretrizes:
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `Erro HTTP ${response.status}`);
+        const errMsg = errorData.error?.message || `Erro HTTP ${response.status}`;
+
+        // Fallback automático caso o Google descontinue ou renomeie modelos
+        if (errMsg.includes('no longer available') || errMsg.includes('not found')) {
+          this.conversationHistory.pop();
+          if (this.modelName !== 'gemini-1.5-flash') {
+            console.warn(`[MARY AI] Redirecionando para gemini-1.5-flash devido a: ${errMsg}`);
+            this.modelName = 'gemini-1.5-flash';
+            localStorage.setItem('mary_gemini_model', 'gemini-1.5-flash');
+            return this.sendMessage(userText, userName);
+          }
+        }
+
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
@@ -82,6 +101,10 @@ Suas diretrizes:
       return replyText;
     } catch (error) {
       console.error("Falha ao comunicar com Gemini:", error);
+      // Remove a mensagem de usuário pendente para não desincronizar o histórico no próximo turno
+      if (this.conversationHistory.length > 0 && this.conversationHistory[this.conversationHistory.length - 1].role === 'user') {
+        this.conversationHistory.pop();
+      }
       return `Aviso dos sistemas: Ocorreu uma anomalia na conexão com o Gemini (${error.message}). Recomendo verificar sua chave de API nas configurações.`;
     }
   }
